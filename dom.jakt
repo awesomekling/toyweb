@@ -1,0 +1,239 @@
+class Node {
+
+    public virtual fn node_name(this) throws => "Node"
+
+    public parent: weak Node? = None
+}
+
+class Text: Node {
+    public override fn node_name(this) throws => "Text"
+
+    public fn create(anon data: String) throws -> Text {
+        return Text(data)
+    }
+
+    public data: String
+}
+
+class ParentNode: Node {
+    public override fn node_name(this) throws => "ParentNode"
+
+    public fn append_child(mut this, anon mut child: Node) throws {
+        .children.push(child)
+        child.parent = this
+    }
+
+    // FIXME: Allow `= []` in member default initializers
+    public children: [Node]
+}
+
+class Document: ParentNode {
+    public override fn node_name(this) throws => "Document"
+
+    public fn create() throws -> Document {
+        return Document(children: [])
+    }
+}
+
+class Element: ParentNode {
+    public override fn node_name(this) throws => .tag_name
+
+    public fn create(tag_name: String) throws -> Element {
+        return Element(children: [], tag_name, attributes: [:])
+    }
+
+    public fn set_attribute(mut this, name: String, value: String) throws {
+        .attributes[name] = value
+    }
+
+    public fn get_attribute(this, anon name: String) -> String? {
+        return .attributes.get(name)
+    }
+
+    public fn has_class(this, anon class_: String) -> bool {
+        // FIXME: Return whether class is present
+        return false
+    }
+
+    public tag_name: String
+    public attributes: [String: String]
+}
+
+fn dump_tree(anon node: Node, indent: usize = 0) throws {
+    print("{}", String::repeated(character: c' ', count: indent * 2))
+
+    if node is Text {
+        println("{}", (node as! Text).data)
+    }
+    else if node is Element {
+        print("<{}", node.node_name())
+        for (name, value) in (node as! Element).attributes {
+            print(" {}=\"{}\"", name, value)
+        }
+        println(">")
+    }
+    else {
+        println("<{}>", node.node_name())
+    }
+
+    if node is ParentNode {
+        for child in (node as! ParentNode).children {
+            dump_tree(child, indent: indent + 1)
+        }
+    }
+}
+
+enum SimpleSelector {
+    Universal // *
+    TagName(String) // html
+    Class(String) // .class
+    Id(String) // #id
+
+    public fn matches(this, anon element: Element) -> bool => match this {
+        Universal => true
+        TagName(tag_name) => element.tag_name == tag_name
+        Class(class_) => element.has_class(class_)
+        Id(id) => element.get_attribute("id") == Some(id)
+    }
+}
+
+enum Combinator {
+    None
+    ImmediateChild
+}
+
+struct CompoundSelector {
+
+    fn matches(this, anon element: Element) -> bool {
+        for simple_selector in .simple_selectors {
+            if not simple_selector.matches(element) {
+                return false
+            }
+        }
+        return true
+    }
+
+    combinator: Combinator
+    simple_selectors: [SimpleSelector]
+}
+
+struct Selector {
+
+    fn matches(this, anon element: Element) -> bool {
+
+        mut current = element
+
+        // FIXME: Add something for reverse iteration of Array, e.g "for element in array.in_reverse() { ... }"
+
+        for i in 0...compound_selectors.size() {
+            let index = .compound_selectors.size() - 1 - i
+            let compound_selector = .compound_selectors[index]
+
+            if not compound_selector.matches(current) {
+                return false
+            }
+
+            if compound_selector.combinator is ImmediateChild {
+                if current.parent.has_value() and current.parent! is Element {
+                    current = current.parent! as! Element
+                }
+            }
+        }
+
+        return true
+    }
+
+    text: String
+    compound_selectors: [CompoundSelector]
+}
+
+// h1
+fn make_h1_selector() throws -> Selector {
+    return Selector(
+        text: "h1"
+        compound_selectors: [
+            CompoundSelector(
+                combinator: Combinator::None
+                simple_selectors: [SimpleSelector::TagName("h1")]
+            )
+        ]
+    )
+}
+
+// body > h1
+fn make_body_gt_h1_selector() throws -> Selector {
+    return Selector(
+        text: "body > h1"
+        compound_selectors: [
+            CompoundSelector(
+                combinator: Combinator::None
+                simple_selectors: [SimpleSelector::TagName("body")]
+            )
+            CompoundSelector(
+                combinator: Combinator::ImmediateChild
+                simple_selectors: [SimpleSelector::TagName("h1")]
+            )
+        ]
+    )
+}
+
+// div#whf
+fn make_div_id_whf_selector() throws -> Selector {
+    return Selector(
+        text: "div#whf"
+        compound_selectors: [
+            CompoundSelector(
+                combinator: Combinator::None
+                simple_selectors: [
+                    SimpleSelector::TagName("div")
+                    SimpleSelector::Id("whf")
+                ]
+            )
+        ]
+    )
+}
+
+fn test_selector(anon selector: Selector, anon elements: [Element]) throws {
+    println("'{}' selector matches...", selector.text)
+    for element in elements {
+        println("   <{}>: {}", element.node_name(), selector.matches(element))
+    }
+}
+
+fn main() {
+
+    mut document = Document::create()
+
+    mut html = Element::create(tag_name: "html")
+    document.append_child(html)
+
+    mut head = Element::create(tag_name: "head")
+    html.append_child(head)
+
+    mut title = Element::create(tag_name: "title")
+    head.append_child(title)
+    title.append_child(Text::create("Well hello friends!"))
+
+    mut body = Element::create(tag_name: "body")
+    html.append_child(body)
+
+    mut h1 = Element::create(tag_name: "h1")
+    body.append_child(h1)
+    h1.append_child(Text::create("Welcome :^)"))
+
+    mut div = Element::create(tag_name: "div")
+    div.set_attribute(name: "id", value: "whf")
+    body.append_child(div)
+
+    dump_tree(html)
+
+    println("div getAttribute(id): '{}'", div.get_attribute(name: "id"))
+
+    println("")
+
+    let elements = [body, h1, div]
+
+    test_selector(make_h1_selector(), elements)
+    test_selector(make_body_gt_h1_selector(), elements)
+    test_selector(make_div_id_whf_selector(), elements)
+}

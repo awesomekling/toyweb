@@ -36,7 +36,7 @@ class Document: ParentNode {
 }
 
 class Element: ParentNode {
-    public override fn node_name(this) throws => .tag_name
+    public override fn node_name(this) throws -> String => .tag_name
 
     public fn create(tag_name: String) throws -> Element {
         return Element(children: [], tag_name, attributes: [:])

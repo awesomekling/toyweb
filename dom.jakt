@@ -2,7 +2,7 @@ class Node {
 
     public virtual fn node_name(this) throws => "Node"
 
-    public parent: weak Node? = None
+    public parent: weak Node = None
 }
 
 class Text: Node {

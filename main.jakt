@@ -2,7 +2,7 @@ import dom
 import css
 
 // h1
-fn make_h1_selector() throws -> Selector {
+fn make_h1_selector() -> Selector {
     return Selector(
         text: "h1"
         compound_selectors: [
@@ -15,7 +15,7 @@ fn make_h1_selector() throws -> Selector {
 }
 
 // body > h1
-fn make_body_gt_h1_selector() throws -> Selector {
+fn make_body_gt_h1_selector() -> Selector {
     return Selector(
         text: "body > h1"
         compound_selectors: [
@@ -32,7 +32,7 @@ fn make_body_gt_h1_selector() throws -> Selector {
 }
 
 // div#whf
-fn make_div_id_whf_selector() throws -> Selector {
+fn make_div_id_whf_selector() -> Selector {
     return Selector(
         text: "div#whf"
         compound_selectors: [
@@ -47,7 +47,7 @@ fn make_div_id_whf_selector() throws -> Selector {
     )
 }
 
-fn test_selector(anon selector: Selector, anon elements: [Element]) throws {
+fn test_selector(anon selector: Selector, anon elements: [Element]) {
     println("'{}' selector matches...", selector.text)
     for element in elements {
         println("   <{}>: {}", element.node_name(), selector.matches(element))

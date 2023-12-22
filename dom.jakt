@@ -1,14 +1,14 @@
 class Node {
 
-    public virtual fn node_name(this) throws => "Node"
+    public virtual fn node_name(this) => "Node"
 
     public parent: weak Node = None
 }
 
 class Text: Node {
-    public override fn node_name(this) throws => "Text"
+    public override fn node_name(this) => "Text"
 
-    public fn create(anon data: String) throws -> Text {
+    public fn create(anon data: String) -> Text {
         return Text(data)
     }
 
@@ -16,9 +16,9 @@ class Text: Node {
 }
 
 class ParentNode: Node {
-    public override fn node_name(this) throws => "ParentNode"
+    public override fn node_name(this) => "ParentNode"
 
-    public fn append_child(mut this, anon mut child: Node) throws {
+    public fn append_child(mut this, anon mut child: Node) {
         .children.push(child)
         child.parent = this
     }
@@ -28,21 +28,21 @@ class ParentNode: Node {
 }
 
 class Document: ParentNode {
-    public override fn node_name(this) throws => "Document"
+    public override fn node_name(this) => "Document"
 
-    public fn create() throws -> Document {
+    public fn create() -> Document {
         return Document(children: [])
     }
 }
 
 class Element: ParentNode {
-    public override fn node_name(this) throws -> String => .tag_name
+    public override fn node_name(this) -> String => .tag_name
 
-    public fn create(tag_name: String) throws -> Element {
+    public fn create(tag_name: String) -> Element {
         return Element(children: [], tag_name, attributes: [:])
     }
 
-    public fn set_attribute(mut this, name: String, value: String) throws {
+    public fn set_attribute(mut this, name: String, value: String) {
         .attributes[name] = value
     }
 
@@ -59,7 +59,7 @@ class Element: ParentNode {
     public attributes: [String: String]
 }
 
-fn dump_tree(anon node: Node, indent: usize = 0) throws {
+fn dump_tree(anon node: Node, indent: usize = 0) {
     print("{}", String::repeated(character: c' ', count: indent * 2))
 
     if node is Text {
